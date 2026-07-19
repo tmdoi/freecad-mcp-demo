@@ -2,6 +2,14 @@
 
 FreeCAD + Claude Desktop MCP連携による3Dモデリングデモ。
 
+## ⚠️ 注意事項
+
+- 本リポジトリに記載のプロンプトはあくまで一例です。同一のプロンプトを入力しても、AIの応答は毎回異なる場合があります。
+- 生成されるモデルの形状・寸法・動作の正確性は保証されません。実用・製造目的で使用する場合は必ず人間による検証を行ってください。
+- FreeCAD・freecad-mcp・Claude Desktopのバージョンによって動作結果が異なる場合があります。
+
+---
+
 ## 概要
 
 - **ツール**: FreeCAD 1.1.1 + [freecad-mcp](https://github.com/neka-nat/freecad-mcp) + Claude Desktop
