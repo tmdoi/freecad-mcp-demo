@@ -22,8 +22,11 @@ FreeCAD + Claude Desktop MCP連携による3Dモデリングデモ。
 │   ├── scara_robot.FCStd   # FreeCADプロジェクト
 │   ├── scara_robot.stl     # 3Dプリント用STL
 │   └── scara_demo.mp4      # 動作デモ動画
-└── tokyo_tower/
-    └── tokyo_tower_80mm.stl  # 東京タワー（高さ80mm）STL
+├── tokyo_tower/
+│   └── tokyo_tower_80mm.stl      # 東京タワー（高さ80mm）STL
+└── unitree_go2/
+    ├── unitree_go2.FCStd         # 4脚歩行ロボット（基本版）
+    └── unitree_go2_photoref.FCStd # 実機写真を参照して造形を寄せた版
 ```
 
 ## セットアップ
@@ -171,3 +174,108 @@ FreeCADの連続スクリーンショット→動画変換（フレーム毎にP
 3. 出力: `~/dev/freecad/scara_robot/scara_demo.mp4`（273フレーム・約9秒・0.6MB）
 
 > ffmpegが未インストールの場合は `brew install ffmpeg` で導入。
+
+---
+
+### Unitree GO2（4脚歩行ロボット）
+
+#### Step 1: モデル生成
+
+```
+Unitree社 GO2の4脚歩行ロボットを書きたい
+```
+
+Claudeがweb検索で実機スペックを調べたうえで、1/10スケールのモデルを生成する。
+
+**参照した実機スペック（Unitree GO2 標準版）:**
+
+| 項目 | 実寸 | 1/10モデル |
+|---|---|---|
+| 製品サイズ | 700 × 310 × 400 mm | 70 × 31 × 40 mm |
+| 重量 | 約15 kg（バッテリー込み） | ― |
+| 胴体関節（Hip）可動域 | -48° 〜 48° | ― |
+| 大腿関節（Thigh）可動域 | -200° 〜 90° | ― |
+| 下腿関節（Calf）可動域 | -156° 〜 -48° | ― |
+
+**生成されるパーツ構成（Part::Feature × 18）:**
+
+| オブジェクト名 | 内容 |
+|---|---|
+| `Body` | 胴体シャーシ + 上部カバー（角丸） |
+| `Head` | 前方ユニット + LiDAR円柱 |
+| `Hip_○○` | 股関節モータ（横向き円筒）× 4 |
+| `Thigh_○○` | 大腿（カプセル形状）× 4 |
+| `Calf_○○` | 下腿（カプセル形状）× 4 |
+| `Foot_○○` | 足先（球体・黒ゴム想定）× 4 |
+
+`○○` は脚の位置を表す **FR / FL / RR / RL**（前右・前左・後右・後左）。
+
+**立位姿勢:** 大腿 45°・下腿 -75°（4本の足先はすべて Z = -33.3mm で水平接地）
+
+> SCARAと同様に各パーツを個別の `Part::Feature` に分割しているため、
+> Placementを書き換えれば歩行アニメーションに拡張できる。
+
+#### Step 2: 実機写真を参照した造形の作り込み（任意）
+
+実機の写真を添付して、以下のように指示する。
+
+```
+黄色いパーツは前ですか？できれば，写真のような形状に似せてほしいです
+```
+
+**写真参照版（`unitree_go2_photoref.FCStd`）での変更点:**
+
+- カラーを実機準拠のシルバーグレー基調に変更（初回生成時の黄色は実機には存在しない）
+- 胴体を「下段シャーシ + 上段カウル」の2段構成にし、上面の盛り上がりを再現
+- 顔を黒い前面パネル + メインカメラ + LiDARドーム + サイドセンサーの構成に変更
+- 大腿を板状の厚いハウジング、下腿を下に向かって細くなるテーパー形状に変更
+- 股関節・膝に円筒モータを露出させる
+
+> 画像を添付すると、AIが自身の生成物と実機との差異を指摘したうえで修正できる。
+> 形状の細部を詰める場合は、テキストだけで指示するより効率が良い。
+
+#### 補足: fillet エラーへの対処
+
+`Part.makeFillet()` は全エッジ一括指定で `StdFail_NotDone` エラーになることがある。
+以下のようなフォールバック関数を挟むと安定する。
+
+```python
+def safe_fillet(shape, radius):
+    try:
+        return shape.makeFillet(radius, shape.Edges)
+    except Exception:
+        pass
+    try:
+        # 縦エッジのみに限定して再試行
+        vedges = [e for e in shape.Edges
+                  if abs(e.Vertexes[0].Point.z - e.Vertexes[-1].Point.z) > 1e-3]
+        return shape.makeFillet(radius, vedges)
+    except Exception:
+        return shape  # 失敗したら面取りなしで返す
+```
+
+---
+
+## Tips
+
+### FreeCADのテーマをLightに切り替える
+
+```
+FreeCADの画面モードをLightモードにしたい
+```
+
+同梱のプリファレンスパックをマージ適用する（`Insert` は既存設定を保持、`Import` は置換）。
+
+```python
+import FreeCAD as App
+cfg = "/Applications/FreeCAD.app/Contents/Resources/share/Gui/PreferencePacks/FreeCAD Light/FreeCAD Light.cfg"
+App.ParamGet("User parameter:BaseApp").Parent().Insert(cfg)
+```
+
+適用後はFreeCADの再起動で完全に反映される。
+GUIから操作する場合は **FreeCAD → 設定… → 一般 → テーマ**。
+
+### 重い処理でGUIがタイムアウトする場合
+
+OCCTのブーリアン演算やgitのpushなどで `GUI dispatch timed out after 90s` が出る場合は、
+`execute_code` ではなく `execute_code_async` を使うとバックグラウンド実行になる。
