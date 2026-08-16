@@ -24,9 +24,18 @@ FreeCAD + Claude Desktop MCP連携による3Dモデリングデモ。
 │   └── scara_demo.mp4      # 動作デモ動画
 ├── tokyo_tower/
 │   └── tokyo_tower_80mm.stl      # 東京タワー（高さ80mm）STL
-└── unitree_go2/
-    ├── unitree_go2.FCStd         # 4脚歩行ロボット（基本版）
-    └── unitree_go2_photoref.FCStd # 実機写真を参照して造形を寄せた版
+├── unitree_go2/
+│   ├── unitree_go2.FCStd         # 4脚歩行ロボット（基本版）
+│   └── unitree_go2_photoref.FCStd # 実機写真を参照して造形を寄せた版
+└── wall_planter/
+    ├── wall_planter.FCStd         # 壁掛けプランター（3部品）
+    ├── plate1_frame.stl           # プレート1: フレーム容器
+    ├── plate2_liner_tray.stl      # プレート2: ライナー+ドリップトレイ
+    └── usdz/                      # iPhone AR確認用USDZ
+        ├── Frame.usdz
+        ├── Liner.usdz
+        ├── DripTray.usdz
+        └── wall_planter_assembled.usdz  # 3部品アセンブル版
 ```
 
 ## セットアップ
@@ -279,3 +288,57 @@ GUIから操作する場合は **FreeCAD → 設定… → 一般 → テーマ*
 
 OCCTのブーリアン演算やgitのpushなどで `GUI dispatch timed out after 90s` が出る場合は、
 `execute_code` ではなく `execute_code_async` を使うとバックグラウンド実行になる。
+
+---
+
+### 壁掛けプランター（無印良品「壁にかけられる観葉植物」参照）
+
+実機の商品ページ画像（正面・裏面）を添付し、「モデルはまだ作らず設計相談から」と伝えて、
+対話的に仕様を固めてから造形した事例。
+
+#### 設計相談で確定した仕様
+
+| 項目 | 決定 |
+|---|---|
+| 植え方 | 土を直接入れる（写真踏襲） |
+| 壁固定 | 裏面の鍵穴スリット（フック掛け） |
+| 前面開口 | 控えめ + 土留めリップ（土こぼれ防止） |
+| 排水 | ライナー底に排水穴 + ドリップトレイ |
+| 防水 | コートなし（壁厚2mm + 水量管理） |
+| 寸法 | 実物通り 143 × 143 × 45 mm |
+| 造形ベッド | Bambu A1（256mm角） |
+
+#### 3部品構成
+
+| 部品 | 役割 |
+|---|---|
+| `Frame` | 白い外殻。前面土留めリップ、四隅の脚（壁とのすき間5mm）、裏面の鍵穴スリット + 補強ボス、底内側の水返し堰 |
+| `Liner` | 土を入れるお椀。底に排水穴 φ4 × 3個 |
+| `DripTray` | ライナー下の受け皿。排水を溜めて抜いて捨てられる |
+
+> 3つの正方形（143 / 138 / 137mm角）は256角ベッドに平面展開すると収まらないため、
+> 2プレートに分割。品質（防水・強度）を優先し、水を受ける面を層に沿わせる寝かせ置きを基本とした。
+
+- **プレート1**: `Frame` 単独（寝かせ置き）
+- **プレート2**: `Liner`（寝かせ置き）+ `DripTray`（薄いので立て置き）
+
+#### スライサー設定の推奨（コートなし防水方針）
+
+壁を3周以上、底面ソリッド層を5層以上にすると、FDMの層間からの水染みを物理的に減らせる。
+
+#### iPhoneでのAR確認（USDZ）
+
+STLはiOS標準ではプレビューできないため、USDZに変換すると
+iPhoneのクイックルックでグリグリ回して確認でき、AR表示で原寸（14.3cm角）を壁に投影できる。
+
+macOS標準のUSDツールでSTLを経由せず、メッシュ頂点から直接USDA→USDZを生成した。
+
+```python
+# 各パーツのメッシュ頂点・面から USDA を書き出し、usdzip で USDZ 化
+import subprocess
+subprocess.run(["/usr/bin/usdzip", "out.usdz", "in.usda"])
+subprocess.run(["/usr/bin/usdchecker", "out.usdz"])  # 検証
+```
+
+`wall_planter_assembled.usdz` は3部品を組み立て位置に配置した完成イメージ。
+AirDropまたはメッセージでiPhoneに送り、タップで3D/AR確認できる。
