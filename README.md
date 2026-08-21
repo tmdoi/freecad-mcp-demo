@@ -27,15 +27,18 @@ FreeCAD + Claude Desktop MCP連携による3Dモデリングデモ。
 ├── unitree_go2/
 │   ├── unitree_go2.FCStd         # 4脚歩行ロボット（基本版）
 │   └── unitree_go2_photoref.FCStd # 実機写真を参照して造形を寄せた版
-└── wall_planter/
-    ├── wall_planter.FCStd         # 壁掛けプランター（3部品）
-    ├── plate1_frame.stl           # プレート1: フレーム容器
-    ├── plate2_liner_tray.stl      # プレート2: ライナー+ドリップトレイ
-    └── usdz/                      # iPhone AR確認用USDZ
-        ├── Frame.usdz
-        ├── Liner.usdz
-        ├── DripTray.usdz
-        └── wall_planter_assembled.usdz  # 3部品アセンブル版
+├── wall_planter/
+│   ├── wall_planter.FCStd         # 壁掛けプランター（3部品）
+│   ├── plate1_frame.stl           # プレート1: フレーム容器
+│   ├── plate2_liner_tray.stl      # プレート2: ライナー+ドリップトレイ
+│   └── usdz/                      # iPhone AR確認用USDZ
+│       ├── Frame.usdz
+│       ├── Liner.usdz
+│       ├── DripTray.usdz
+│       └── wall_planter_assembled.usdz  # 3部品アセンブル版
+└── akashi_bridge/
+    ├── akashi_bridge.FCStd        # 明石海峡大橋（幅80mm・一体造形）
+    └── akashi_bridge_80mm.stl     # 3Dプリント用STL
 ```
 
 ## セットアップ
@@ -406,3 +409,38 @@ subprocess.run(["/usr/bin/usdchecker", "out.usdz"])  # 検証
 
 `wall_planter_assembled.usdz` は3部品を組み立て位置に配置した完成イメージ。
 AirDropまたはメッセージでiPhoneに送り、タップで3D/AR確認できる。
+
+---
+
+### 明石海峡大橋（幅80mm・3Dプリント一体造形）
+
+```
+明石大橋を3Dプリンターでプリントアウトするモデルを作りたい、幅は80ミリ
+```
+
+Claudeがweb検索で実橋の諸元を調べ、支間比を保ったままスケールする。
+
+**参照した実橋の諸元:**
+
+| 項目 | 実物 | 80mmモデル |
+|---|---|---|
+| 全長 | 3,911.1 m | 80.0 mm |
+| 中央支間 | 1,990.8 m | 40.7 mm |
+| 側支間（各） | 960 m | 19.6 mm |
+| 主塔高さ | 海面上約300 m | 桁上に強調して造形 |
+
+**構成要素（一体造形・単一ソリッド）:**
+- 補剛桁（デッキ）
+- 主塔2基（門型ラーメン・桁を貫いて基礎から塔頂まで／水平梁付き）
+- メインケーブル 左右2本（放物線サグの懸垂線）
+- ハンガーロープ 20本（ケーブルから桁を吊る）
+
+**出力:** 幅80.2 × 高さ23.9mm、単一ソリッド。主塔の4脚で自立する。
+
+**印刷のヒント:**
+- ケーブル・ハンガーが細いためレイヤー0.12〜0.16mm推奨
+- 桁を下・塔頂を上にした縦置きでケーブルの曲線がきれいに出る（ツリーサポート推奨）
+
+> スケール補足: 全長を80mmにすると縮尺は約1/48,900。この縮尺のまま主塔高やケーブル径を
+> 実寸換算すると細くなりすぎて造形できないため、支間比（横方向のプロポーション）は忠実に保ちつつ、
+> 塔高・ケーブル径・ハンガー径は造形可能な最小肉厚を確保する方向で調整している。
