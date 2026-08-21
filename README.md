@@ -40,12 +40,19 @@ FreeCAD + Claude Desktop MCP連携による3Dモデリングデモ。
 
 ## セットアップ
 
+### macOS
+
 ```bash
-# FreeCAD MCPアドオン配置
-cp -r addon/FreeCADMCP ~/Library/Application\ Support/FreeCAD/v1-1/Mod/
+# FreeCAD (Homebrew) と uv をインストール
+brew install --cask freecad
+brew install uv
+
+# FreeCAD MCPアドオン配置（FreeCAD 1.1系）
+git clone https://github.com/neka-nat/freecad-mcp.git
+cp -r freecad-mcp/addon/FreeCADMCP ~/Library/Application\ Support/FreeCAD/v1-1/Mod/
 ```
 
-Claude Desktop設定 (`claude_desktop_config.json`):
+Claude Desktop設定 `~/Library/Application Support/Claude/claude_desktop_config.json`:
 
 ```json
 {
@@ -57,6 +64,63 @@ Claude Desktop設定 (`claude_desktop_config.json`):
   }
 }
 ```
+
+### Windows 11
+
+```powershell
+# FreeCAD と uv をインストール
+winget install FreeCAD.FreeCAD
+powershell -ExecutionPolicy ByPass -c "irm https://astral.sh/uv/install.ps1 | iex"
+
+# uvx のパスを確認（設定ファイルにフルパスで記述する）
+where.exe uvx
+#   例: C:\Users\<ユーザー名>\.local\bin\uvx.exe
+
+# FreeCAD MCPアドオンを取得（git未導入ならZIPで代用）
+cd $env:USERPROFILE\Downloads
+Invoke-WebRequest -Uri "https://github.com/neka-nat/freecad-mcp/archive/refs/heads/main.zip" -OutFile "freecad-mcp.zip"
+Expand-Archive -Path "freecad-mcp.zip" -DestinationPath . -Force
+
+# アドオン配置（%APPDATA%\FreeCAD\Mod、バージョン番号フォルダなし）
+$dest = "$env:APPDATA\FreeCAD\Mod\FreeCADMCP"
+New-Item -ItemType Directory -Force -Path $dest
+Copy-Item -Recurse -Force "freecad-mcp-main\addon\FreeCADMCP\*" $dest
+```
+
+Claude Desktop設定 `%APPDATA%\Claude\claude_desktop_config.json`
+（Claude Desktop の 設定 → 開発者 → 「設定を編集」からも開ける）:
+
+```json
+{
+  "mcpServers": {
+    "freecad": {
+      "command": "C:\\Users\\<ユーザー名>\\.local\\bin\\uvx.exe",
+      "args": ["freecad-mcp", "--only-text-feedback"]
+    }
+  }
+}
+```
+
+#### macOS との主な違い
+
+| 項目 | macOS | Windows 11 |
+|---|---|---|
+| アドオン配置先 | `~/Library/Application Support/FreeCAD/v1-1/Mod/` | `%APPDATA%\FreeCAD\Mod\`（バージョン番号なし） |
+| 設定ファイル | `~/Library/Application Support/Claude/` | `%APPDATA%\Claude\` |
+| uvx の指定 | `/opt/homebrew/bin/uvx` | `.exe` 付きフルパス、`\` は `\\` にエスケープ |
+| JSON内パス区切り | `/` | `\\`（バックスラッシュ2つ） |
+
+> **Windows特有のハマりどころ**
+> - FreeCAD 1.1.3 などで初回起動時に「以前の設定を移行しますか？」と出たら「設定をコピー（推奨）」を選ぶとアドオンが新バージョン用ディレクトリに引き継がれる。
+> - アドオンは `Mod\FreeCADMCP\InitGui.py` が直下にある状態が正解（`Mod\FreeCADMCP\FreeCADMCP\...` の二重フォルダだと認識されない）。
+> - 設定ファイルを保存しても、Claude Desktop はタスクトレイに常駐したままだと再読み込みされない。トレイアイコンを右クリックして完全終了してから再起動する。
+> - RPCサーバーの起動確認は PowerShell で `Test-NetConnection -ComputerName 127.0.0.1 -Port 9875`（`TcpTestSucceeded : True` なら稼働中）。
+
+### 共通: RPCサーバーの起動
+
+FreeCAD を起動 → ワークベンチのドロップダウンから **MCP Addon** を選択 →
+ツールバーの **Start RPC Server** をクリック（**Auto-Start Server** にチェックで次回から自動起動）。
+その後 Claude Desktop を再起動し、ツール一覧に `freecad` が出れば接続完了。
 
 ---
 
