@@ -22,6 +22,13 @@ FreeCAD + Claude Desktop MCP連携による3Dモデリングデモ。
 │   ├── scara_robot.FCStd   # FreeCADプロジェクト
 │   ├── scara_robot.stl     # 3Dプリント用STL
 │   └── scara_demo.mp4      # 動作デモ動画
+├── scara_v2_anim/
+│   ├── SCARA_v2.FCStd               # 実寸4軸SCARA（ピック＆プレース）
+│   ├── scara_anim.py                # FK・キーフレーム・レンダー関数
+│   ├── scara_pick_place.mp4 / .gif  # アイソメ視点の動作動画
+│   ├── scara_pick_place_top.mp4 / .gif  # 真上視点の動作動画
+│   ├── scara_v2_assembly_home.step  # ホーム姿勢アセンブリ
+│   └── scara_v2_robot_home.stl      # ロボット本体STL
 ├── tokyo_tower/
 │   └── tokyo_tower_80mm.stl      # 東京タワー（高さ80mm）STL
 ├── unitree_go2/
@@ -254,6 +261,34 @@ FreeCADの連続スクリーンショット→動画変換（フレーム毎にP
 3. 出力: `~/dev/freecad/scara_robot/scara_demo.mp4`（273フレーム・約9秒・0.6MB）
 
 > ffmpegが未インストールの場合は `brew install ffmpeg` で導入。
+
+---
+
+### SCARA v2（実寸4軸・ピック＆プレース アニメーション）
+
+`scara_robot` の発展版。実寸相当（アーム 250 + 200 mm）の4軸SCARAで、
+立方体3個を順次把持して積み上げるピック＆プレースを動画化した。
+詳細は [scara_v2_anim/README.md](scara_v2_anim/README.md)。
+
+```
+スカラ型ロボットのアニメーションを作りたい．
+```
+
+質問に答える形で「新規／標準4軸／実寸／ピック&プレース／連番スクショ→動画／まずは相談」と伝え、
+
+```
+逆運動学は不要。3つの立方体を順次，把持して積み上げるようなアニメーション。
+```
+
+以降は「進めて」で ①モデリング → ②姿勢確認 → ③1サイクルのテストレンダー → ④本番レンダー と段階的に進める。
+
+**ポイント:**
+- IK を実装せず、関節角を先に決めて FK で先端座標を求め、そこに立方体を置く（角度とワーク位置が必ず一致する）
+- Assembly を使わず、毎フレーム `Placement` を親から順に掛け合わせて更新
+- 把持時にグリッパ座標系での相対Placementを記録して追従させ、J4 の回転で積み上げ時の向きを揃える
+- `execute_code` の 90 秒制限を避けるため、レンダーは 100〜250 フレームずつ分割実行
+
+![scara v2](scara_v2_anim/scara_pick_place.gif)
 
 ---
 

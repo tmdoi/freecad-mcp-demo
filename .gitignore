@@ -2,3 +2,5 @@
 __pycache__/
 *.pyc
 _prefs_backup/
+scara_v2_anim/frames*/
+*.FCBak
