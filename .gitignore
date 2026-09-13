@@ -4,3 +4,5 @@ __pycache__/
 _prefs_backup/
 scara_v2_anim/frames*/
 *.FCBak
+# commercial-product replica: keep local only (copyright)
+spiral_coaster/
